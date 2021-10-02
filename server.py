@@ -1,7 +1,7 @@
 import flask
 from flask import Flask, request, jsonify, g
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 app = Flask(__name__)
@@ -15,7 +15,8 @@ def hello_world():
 # returns => [{ x, y, magnitude }]
 @app.get("/api/v1/locations")
 def locations():
-    return locations_query(datetime.now() - timedelta(minutes=30), datetime.now())
+    now = datetime.now(timezone.utc)
+    return locations_query(now - timedelta(minutes=300), now)
 
 @app.get("/api/v1/locations/<int:start>/<int:end>")
 def locations_interval(start, end):
@@ -31,7 +32,7 @@ def locations_query(start, end):
 
     data = {}
     for id, lat, lon, alt, time in cur:
-        print(repr(time), str(time), time.tzinfo)
+        time = time.replace(tzinfo=timezone.utc).astimezone()
         if id not in data or time > data[id]["time"]:
             data[id] = {
                 "id": id,
@@ -40,12 +41,26 @@ def locations_query(start, end):
                 "time": time
             }
 
-    ret = {}
+    bins = {}
     for person in data.values():
-        #ret.setdefault(person["coords"], []).append(person["id"])
-        ret[person["coords"]] = 1 + ret.get(person["coords"], 0)
+        bins[person["coords"]] = 1 + bins.get(person["coords"], 0)
 
-    resp = jsonify(ret)
+    ret = []
+    mn = min(bins.values())
+    mx = max(bins.values())
+
+    for (lat, lon), val in bins.items():
+        ret.append({
+            "lat": lat,
+            "lon": lon,
+            "val": val,
+        })
+
+    resp = jsonify({
+        "data": ret,
+        "max": mx,
+        "min": mn
+    })
     resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp
