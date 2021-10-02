@@ -1,12 +1,8 @@
-from flask import Flask, request, jsonify, g, send_from_directory
+from flask import Flask, request, jsonify, g
 from datetime import datetime, timedelta, timezone
 import os, sqlite3
 
 app = Flask(__name__, static_url_path='', static_folder='static/dist')
-
-@app.get("/")
-def index():
-    return app.send_static_file("index.html")
 
 # timeStart
 # timeEnd
@@ -33,10 +29,6 @@ def simulated_locations():
 def data():
     now = datetime.now(timezone.utc)
     return locations_data(now - timedelta(minutes=30), now)
-
-#@app.get("/geovid/<path:path>")
-#def geovid(path):
-#    return send_from_directory("geovid", path)
 
 @app.get("/api/v1/data/<int:start>/<int:end>")
 def data_interval(start, end):
