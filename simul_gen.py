@@ -1,4 +1,4 @@
-from real_data_paths import data_gen
+from simul_data_paths import data_gen
 import sqlite3
 import glob
 import json
