@@ -22,7 +22,7 @@ def locations():
 def locations_interval(start, end):
     return locations_query(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
 
-ROUNDING = 3
+ROUNDING = 9
 def normalize_point(lat, lon):
     return round(lat, ROUNDING), round(lon, ROUNDING)
 
@@ -46,8 +46,9 @@ def locations_query(start, end):
         bins[person["coords"]] = 1 + bins.get(person["coords"], 0)
 
     ret = []
-    mn = min(bins.values())
-    mx = max(bins.values())
+
+    mn = min(bins.values()) if bins else 0
+    mx = max(bins.values()) if bins else 0
 
     for (lat, lon), val in bins.items():
         ret.append({
