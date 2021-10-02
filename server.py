@@ -1,3 +1,4 @@
+import flask
 from flask import Flask, request, jsonify, g
 import sqlite3
 from datetime import datetime, timedelta
@@ -44,7 +45,10 @@ def locations_query(start, end):
         #ret.setdefault(person["coords"], []).append(person["id"])
         ret[person["coords"]] = 1 + ret.get(person["coords"], 0)
 
-    return jsonify(ret)
+    resp = flask.Response(jsonify(ret))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+
+    return resp
     
 @app.get("/api/v1/debug")
 def debug():
