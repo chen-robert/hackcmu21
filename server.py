@@ -22,6 +22,15 @@ def locations():
 def locations_interval(start, end):
     return locations_query(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
 
+@app.get("/api/v1/data")
+def data():
+    now = datetime.now(timezone.utc)
+    return locations_data(now - timedelta(minutes=300), now)
+
+@app.get("/api/v1/data/<int:start>/<int:end>")
+def data_interval(start, end):
+    return locations_data(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
+
 ROUNDING = 5
 def normalize_point(lat, lon):
     return round(lat, ROUNDING), round(lon, ROUNDING)
@@ -37,10 +46,23 @@ def locations_query(start, end):
             data[id] = {
                 "id": id,
                 "coords": normalize_point(lat, lon),
-                "alt": alt,
                 "time": time
             }
+    
+    return create_response(data)
 
+def locations_data(start, end):
+    cur = get_db().cursor()
+    cur.execute("SELECT id, lat, lon, alt, time FROM locations WHERE ? <= time AND time <= ?", (start, end))
+
+    data = {}
+    for n, (id, lat, lon, alt, time) in enumerate(cur):
+        time = time.replace(tzinfo=timezone.utc).astimezone()
+        data[n] = {"coords": normalize_point(lat, lon)}
+    
+    return create_response(data)
+
+def create_response(data):
     bins = {}
     for person in data.values():
         bins[person["coords"]] = 1 + bins.get(person["coords"], 0)
