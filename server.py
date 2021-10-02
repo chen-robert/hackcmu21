@@ -22,7 +22,7 @@ def locations():
 def locations_interval(start, end):
     return locations_query(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
 
-ROUNDING = 9
+ROUNDING = 5
 def normalize_point(lat, lon):
     return round(lat, ROUNDING), round(lon, ROUNDING)
 
