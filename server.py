@@ -40,7 +40,7 @@ def locations_query(start, end):
             }
 
     ret = {}
-    for person in data:
+    for person in data.values():
         #ret.setdefault(person["coords"], []).append(person["id"])
         ret[person["coords"]] = 1 + ret.get(person["coords"], 0)
 
