@@ -34,9 +34,9 @@ def data():
     now = datetime.now(timezone.utc)
     return locations_data(now - timedelta(minutes=30), now)
 
-@app.get("/geovid/<path:path>")
-def geovid(path):
-    return send_from_directory("geovid", path)
+#@app.get("/geovid/<path:path>")
+#def geovid(path):
+#    return send_from_directory("geovid", path)
 
 @app.get("/api/v1/data/<int:start>/<int:end>")
 def data_interval(start, end):
