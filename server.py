@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, g
 import sqlite3
 from datetime import datetime, timedelta
+import os
 
 app = Flask(__name__)
 
@@ -65,7 +66,7 @@ def upload():
 
 # DB CODE
 
-DATABASE = './database.db'
+DATABASE = os.environ.get("DATABASE_PATH", './database.db')
 
 def get_db():
     db = getattr(g, '_database', None)
