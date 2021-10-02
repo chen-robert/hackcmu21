@@ -1,2 +1,3 @@
 #!/bin/sh
-gunicorn server:app -w 2 --threads 2 -b 0.0.0.0:5000
+/usr/sbin/nginx
+/usr/local/bin/uwsgi --ini /etc/uwsgi/uwsgi.ini

@@ -46,11 +46,12 @@ html(lang='en')
             .container.px-5
                 .row.gx-5.align-items-center
                     .col-lg-6
-                        img(src='assets/img/logo.png', alt='...', style='height: 15rem;',align='center')
+                        img(src='assets/img/logo.png', alt='...', style='height: 22rem; margin-left:70px',align='center')
                         // Mashead text and app badges
                         .mb-5.mb-lg-0.text-center.text-lg-start
                             h1.display-1.lh-1.mb-3
-                            p.lead.fw-normal.mb-5 CMU's population hotspot map. Designed for you. Find your next COVID-safe dining location on campus.
+                            p.lead.fw-normal CMU's population hotspot map. Designed for you.
+                            p.lead.fw-normal.mb-5 Find your next COVID-safe dining location on campus.
                             .d-flex.flex-column.flex-lg-row.align-items-center
                                 a.unclickable.me-lg-3.mb-4.mb-lg-0(href='#!')
                                     img.app-badge(src='assets/img/coming-soon.png', alt='...')
@@ -102,7 +103,7 @@ html(lang='en')
                                     .text-center
                                         i.bi-camera.icon-feature.text-gradient.d-block.mb-3
                                         h3.font-alt Smart Recommendations
-                                        p.text-muted.mb-0 Tecurrent neural networks trained on historical location data to model future trends!
+                                        p.text-muted.mb-0 Recurrent neural networks trained on historical location data to model future trends!
                             .row
                                 .col-md-6.mb-5.mb-md-0
                                     // Feature item
@@ -150,8 +151,8 @@ html(lang='en')
                         .px-5.px-sm-0
                             iframe(src='/geovid/index.html', alt='...', style='width: 100%; height: 550px; max-width: 614px')
                     .col-12.col-lg-4
-                        h2.display-4.lh-1.mb-4 Machine Learning! 
-                        p.lead.fw-normal.text-muted.mb-5.mb-lg-0 Using advanced Artificial Intelligence and historical data. TODO
+                        h2.display-4.lh-1.mb-4 Machine Learning
+                        p.lead.fw-normal.text-muted.mb-5.mb-lg-0 Our algorithm performs feature extraction on historical data and utilizes GRUs to give our user the most up-to-date restaurant recommendations. 
 
         // Call to action section
         section.cta

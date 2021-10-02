@@ -4,6 +4,10 @@ import os, sqlite3
 
 app = Flask(__name__, static_url_path='', static_folder='static/dist')
 
+@app.get("/")
+def index():
+    return app.send_static_file("index.html")
+
 # timeStart
 # timeEnd
 # returns => [{ x, y, magnitude }]
