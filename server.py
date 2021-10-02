@@ -74,7 +74,7 @@ def create_response(data):
 #     return jsonify(cur.fetchall())
 # 
 # # POST
-# # id
+# # id {DEPRECATED}
 # # location: {x, y, z}
 # @app.post("/api/v1/upload")
 # def upload():
