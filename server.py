@@ -45,7 +45,7 @@ def locations_query(start, end):
         #ret.setdefault(person["coords"], []).append(person["id"])
         ret[person["coords"]] = 1 + ret.get(person["coords"], 0)
 
-    resp = flask.Response(jsonify(ret))
+    resp = jsonify(ret)
     resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp
