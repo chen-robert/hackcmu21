@@ -1,11 +1,6 @@
-import flask
 from flask import Flask, request, jsonify, g, send_from_directory
-import sqlite3
 from datetime import datetime, timedelta, timezone
-from real_data_paths import data_gen
-import os
-import json
-import glob
+import os, sqlite3
 
 app = Flask(__name__, static_url_path='', static_folder='static/dist')
 
@@ -15,28 +10,25 @@ app = Flask(__name__, static_url_path='', static_folder='static/dist')
 @app.get("/api/v1/locations")
 def locations():
     now = datetime.now(timezone.utc)
-    return locations_query(now - timedelta(minutes=300), now)
+    return locations_query(now - timedelta(minutes=30), now)
 
 @app.get("/api/v1/locations/<int:start>/<int:end>")
 def locations_interval(start, end):
     return locations_query(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc))
 
+@app.get("/api/v1/simulated/locations/<int:start>/<int:end>")
+def simulated_locations_interval(start, end):
+    return locations_query(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc), simulated=True)
+
+@app.get("/api/v1/simulated/locations")
+def simulated_locations():
+    now = datetime.now(timezone.utc)
+    return locations_query(now - timedelta(minutes=30), now, simulated=True)
+
 @app.get("/api/v1/data")
 def data():
     now = datetime.now(timezone.utc)
-    return locations_data(now - timedelta(minutes=300), now)
-
-
-@app.get("/api/v1/sample")
-def sample():
-    paths = []
-    for path in glob.iglob("data/*"):
-        with open(path) as f:
-            print(path)
-            paths.append(json.load(f))
-
-    return data_gen(paths)
-
+    return locations_data(now - timedelta(minutes=30), now)
 
 @app.get("/geovid/<path:path>")
 def geovid(path):
@@ -46,12 +38,20 @@ def geovid(path):
 def data_interval(start, end):
     return locations_data(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc))
 
+@app.get("/api/v1/simulated/data/<int:start>/<int:end>")
+def simulated_data_interval(start, end):
+    return locations_data(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc), simulated=True)
+
+
 def normalize_point(lat, lon):
     return round(lat, 6), round(lon, 6)
 
-def locations_query(start, end):
+def locations_query(start, end, simulated=False):
     cur = get_db().cursor()
-    cur.execute("SELECT id, lat, lon, alt, time FROM locations WHERE ? <= time AND time <= ?", (start, end))
+    if simulated:
+        cur.execute("SELECT id, lat, lon, alt, time FROM simulated WHERE ? <= time AND time <= ?", (start, end))
+    else:
+        cur.execute("SELECT id, lat, lon, alt, time FROM locations WHERE ? <= time AND time <= ?", (start, end))
 
     data = {}
     for id, lat, lon, alt, time in cur:
@@ -65,9 +65,12 @@ def locations_query(start, end):
     
     return create_response(data)
 
-def locations_data(start, end):
+def locations_data(start, end, simulated=False):
     cur = get_db().cursor()
-    cur.execute("SELECT id, lat, lon, alt, time FROM locations WHERE ? <= time AND time <= ?", (start, end))
+    if simulated:
+        cur.execute("SELECT id, lat, lon, alt, time FROM simulated WHERE ? <= time AND time <= ?", (start, end))
+    else:
+        cur.execute("SELECT id, lat, lon, alt, time FROM locations WHERE ? <= time AND time <= ?", (start, end))
 
     data = {}
     for n, (id, lat, lon, alt, time) in enumerate(cur):
@@ -97,12 +100,36 @@ def debug():
 # location: {x, y, z} 
 @app.post("/api/v1/upload")
 def upload():
-    print(request.json)
     conn = get_db()
     # cur_time = datetime.datetime.now()
     conn.execute("INSERT INTO locations (id, lat, lon, alt) VALUES (:id, :lat, :lon, :alt)", request.json)
     conn.commit()
     return jsonify(request.json)
+
+# POST
+# id
+# location: {x, y, z} 
+@app.post("/api/v1/simulated/upload")
+def simulated_upload():
+    conn = get_db()
+    # cur_time = datetime.datetime.now()
+    conn.execute("INSERT INTO simulated (id, lat, lon, alt) VALUES (:id, :lat, :lon, :alt)", request.json)
+    conn.commit()
+    return jsonify(request.json)
+
+@app.get("/api/v1/simulated/debug")
+def simulated_debug():
+    cur = get_db().cursor()
+    cur.execute("SELECT * FROM simulated")
+    return jsonify(cur.fetchall())
+
+@app.post("/api/v1/simulated/dropall")
+def simulated_dropall():
+    conn = get_db()
+    # cur_time = datetime.datetime.now()
+    conn.execute("DELETE FROM simulated", request.json)
+    conn.commit()
+    return "dropped"
 
 # DB CODE
 

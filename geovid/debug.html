@@ -3,7 +3,7 @@
         <title>Heatmap</title>
         <style>
             body, html, h2 { margin:0; padding:0; height:100%;}
-            body { font-family:sans-serif; overflow: hidden; }
+            body { font-family:sans-serif; }
             body * { font-weight:200;}
             /* #heatmapContainerWrapper { width:100%; height:100%; position:absolute; background:rgba(0,0,0,.1); } */
             #heatmapContainer { display: inline-block; }
@@ -38,11 +38,10 @@
             </div>
         </div>
         <script src="heatmap.js"></script>
-        <!-- <input type="range" min="1633141188" max="1633142599" value="1633142599" id="timestamp"/> -->
         <div class="correction-wrapper">
-            <span>Original</span><input type="range" min="0" max="100" value="0" id="correction"/><span>Corrected</span>
+            <span>TODO</span><input type="range" min="1633048072" max="1633058072" value="1633048072" id="timestamp"/><span>TODO</span>
         </div>
-        <p class="label">Location data collected on iPhone 8</p>
+        <p class="label">Generated location data</p>
         <script>
             const coordToPoint = (lat, lon, width, height) => ({
                 x: width - (lon + 79.9389) * width / (-79.948799 + 79.938913) | 0,
@@ -54,28 +53,37 @@
                 lon: (1 - x / width) * (-79.948799 + 79.938913) - 79.9389,
             });
 
-            //const timestamp = document.getElementById('timestamp');
-            const correction = document.getElementById('correction');
+            const drawPoints = points => heatmap.setData({
+                min: 1,
+                max: 5,
+                data: points.map(({x, y}) => ({
+                    x: x | 0,
+                    y: y | 0,
+                    value: 1,
+                    radius: 10,
+                })),
+            });
+
+            const drawLocations = (locations, width, height) => heatmap.setData({
+                min: 1,
+                max: 1,
+                data: locations.map(({lat, lon, value}) => ({
+                    ...coordToPoint(lat, lon, width, height),
+                    value,
+                    radius: 15,
+                })),
+            });
+
+            const timestamp = document.getElementById('timestamp');
             const map = document.getElementById('map');
 
+            const heatmap = h337.create({
+                container: document.getElementById('heatmapContainer'),
+                opacity: 0.5,
+                radius: 25
+            });
+
             addEventListener('load', () => {
-                const heatmap = h337.create({
-                    container: document.getElementById('heatmapContainer'),
-                    opacity: 0.5,
-                    radius: 25
-                });
-
-                const drawPoints = points => heatmap.setData({
-                    min: 1,
-                    max: 1,
-                    data: points.map(({x, y}) => ({
-                        x: x | 0,
-                        y: y | 0,
-                        value: 1,
-                        radius: 6,
-                    })),
-                });
-
                 const {width, height} = map;
 
                 window.mapWidth = width;
@@ -85,12 +93,11 @@
 
                 const recalculate = async (value, factor) => {
                     if (prevValue !== value) {
-                        prevData = await (await fetch(`/api/v1/data/1/${value}`)).json();
+                        prevData = await (await fetch(`/api/v1/simulated/locations/${1}/${value}`)).json();
                         prevValue = value;
                     }
 
-                    const points = prevData.map(({lat, lon}) => coordToPoint(lat, lon, width, height))
-                        .map(({x, y}) => ({x:  960 / mapWidth * x ,y: 960 / mapHeight * y}));
+                    const points = prevData.map(({lat, lon}) => coordToPoint(lat, lon, width, height));
 
                     if (factor > 0) {
                         const old = points.splice(0);
@@ -144,12 +151,49 @@
                         }
                     }
 
-                    drawPoints(points.map(({x, y}) => ({x: mapWidth / 960 * x ,y: mapHeight / 960 * y})), width, height);
+                    drawPoints(points, width, height);
                 };
 
-                // timestamp.addEventListener('change', () => recalculate(timestamp.value, correction.value));
-                correction.addEventListener('input', () => recalculate(1633142599, correction.value));
-                recalculate(1633142599, 0);
+                timestamp.addEventListener('change', () => recalculate(timestamp.value, 0));
+                //correction.addEventListener('input', () => recalculate(timestamp.value, correction.value));
+            });
+
+            const points = [];
+
+            let shouldUpdate = false;
+            const update = () => {
+                shouldUpdate = false;
+                drawPoints(points);
+            };
+            const scheduleUpdate = () => {
+                if (!shouldUpdate) {
+                    shouldUpdate = true;
+                    requestAnimationFrame(update);
+                }
+            };
+
+            map.addEventListener('mousedown', e => { points.push({x: e.offsetX, y: e.offsetY}); scheduleUpdate(); });
+            map.addEventListener('mousemove', e => {
+                if (points.length === 0) return;
+                scheduleUpdate();
+
+                const newPoint = {x: e.offsetX, y: e.offsetY};
+                const oldPoint = points[points.length - 1];
+
+                var distX = (newPoint.x - oldPoint.x);
+                var distY = (newPoint.y - oldPoint.y);
+                var dist = Math.sqrt(distX**2 + distY**2);
+
+                for (var i = 0; i < dist; i+= 5) {
+                    points.push({
+                        x: oldPoint.x + (distX / dist) * i,
+                        y: oldPoint.y + (distY / dist) * i
+                    })
+                }
+            });
+            map.addEventListener('mouseup', () => {
+                let coords = points.splice(0).map(({x, y}) => pointToCoord(x, y, mapWidth, mapHeight));
+                console.log(coords);
             });
         </script>
     </body>
