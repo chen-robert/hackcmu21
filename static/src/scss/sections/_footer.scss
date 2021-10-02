@@ -1,0 +1,19 @@
+// 
+// Footer
+// 
+
+// Styling for links in the footer
+footer {
+    background-color: #390A05;
+    a {
+        color: fade-out($white, 0.5);
+        text-decoration: none;
+
+        &:hover,
+        &:active,
+        &:focus {
+            color: fade-out($white, 0.25);
+            text-decoration: underline;
+        }
+    }
+}

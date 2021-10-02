@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <title>Heatmap</title>
+        <style>
+            body, html, h2 { margin:0; padding:0; height:100%;}
+            body { font-family:sans-serif; }
+            body * { font-weight:200;}
+            /* #heatmapContainerWrapper { width:100%; height:100%; position:absolute; background:rgba(0,0,0,.1); } */
+            #heatmapContainer { display: inline-block; }
+            /* #heatmapLegend { background:white; position:absolute; bottom:0; right:0; padding:10px; } */
+            #min { float:left; }
+            #max { float:right; }
+            h1 { position:absolute; background:black; color:white; padding:10px;}
+            #all-examples-info { position:absolute; background:white; font-size:16px; padding:20px; top:100px; width:350px; line-height:150%; }
+            img { height: 500px; }
+            #timestamp { width: 100%; }
+            .heatmap-canvas { pointer-events: none; }
+        </style>
+    </head>
+    <body>
+        <div id="heatmapContainerWrapper">
+            <div id="heatmapContainer">
+                <img id="map" src="map2.png" draggable="false" />
+                <input type="range" min="1633141188" max="1633142599" id="timestamp" style="width: 614px;"/>
+            </div>
+        </div>
+        <script src="heatmap.js"></script>
+        <script>
+            const coordToPoint = (lat, lon, width, height) => ({
+                x: width - (lon + 79.9389) * width / (-79.948799 + 79.938913) | 0,
+                y: height - (lat - 40.440157) * height / (40.446238 - 40.440157) | 0,
+            });
+
+            const pointToCoord = (x, y, width, height) => ({
+                lat: (1 - y / height) * (40.446238 - 40.440157) + 40.440157,
+                lon: (1 - x / width) * (-79.948799 + 79.938913) - 79.9389,
+            });
+
+            const drawPoints = points => heatmap.setData({
+                min: 1,
+                max: 1,
+                data: points.map(({x, y}) => ({
+                    x,
+                    y,
+                    value: 1,
+                    radius: 15,
+                })),
+            });
+
+            const drawLocations = (locations, width, height) => heatmap.setData({
+                min: 1,
+                max: 1,
+                data: locations.map(({lat, lon, value}) => ({
+                    ...coordToPoint(lat, lon, width, height),
+                    value,
+                    radius: 15,
+                })),
+            });
+
+            const timestamp = document.getElementById('timestamp');
+            const map = document.getElementById('map');
+
+            const heatmap = h337.create({
+                container: document.getElementById('heatmapContainer'),
+                opacity: 0.5,
+                radius: 25
+            });
+
+            addEventListener('load', () => {
+                const {width, height} = map;
+
+                window.mapWidth = width;
+                window.mapHeight = height;
+
+                timestamp.addEventListener('change', async () => drawLocations(await (await fetch(`/api/v1/data/1/${timestamp.value}`)).json(), width, height));
+            });
+
+            const points = [];
+
+            let shouldUpdate = false;
+            const update = () => {
+                shouldUpdate = false;
+                drawPoints(points);
+            };
+            const scheduleUpdate = () => {
+                if (!shouldUpdate) {
+                    shouldUpdate = true;
+                    requestAnimationFrame(update);
+                }
+            };
+
+
+        </script>
+    </body>
+</html>

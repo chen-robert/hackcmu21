@@ -1,14 +1,13 @@
 import flask
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, send_from_directory
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from real_data_paths import data_gen
 import os
+import json
+import glob
 
-app = Flask(__name__)
-
-@app.get("/")
-def hello_world():
-    return "<p>Hi Robby!</p>"
+app = Flask(__name__, static_url_path='', static_folder='static/dist')
 
 # timeStart
 # timeEnd
@@ -20,20 +19,35 @@ def locations():
 
 @app.get("/api/v1/locations/<int:start>/<int:end>")
 def locations_interval(start, end):
-    return locations_query(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
+    return locations_query(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc))
 
 @app.get("/api/v1/data")
 def data():
     now = datetime.now(timezone.utc)
     return locations_data(now - timedelta(minutes=300), now)
 
+
+@app.get("/api/v1/sample")
+def sample():
+    paths = []
+    for path in glob.iglob("data/*"):
+        with open(path) as f:
+            print(path)
+            paths.append(json.load(f))
+
+    return data_gen(paths)
+
+
+@app.get("/geovid/<path:path>")
+def geovid(path):
+    return send_from_directory("geovid", path)
+
 @app.get("/api/v1/data/<int:start>/<int:end>")
 def data_interval(start, end):
-    return locations_data(datetime.fromtimestamp(start), datetime.fromtimestamp(end))
+    return locations_data(datetime.fromtimestamp(start, timezone.utc), datetime.fromtimestamp(end, timezone.utc))
 
-ROUNDING = 5
 def normalize_point(lat, lon):
-    return round(lat, ROUNDING), round(lon, ROUNDING)
+    return round(lat, 6), round(lon, 6)
 
 def locations_query(start, end):
     cur = get_db().cursor()
@@ -67,23 +81,7 @@ def create_response(data):
     for person in data.values():
         bins[person["coords"]] = 1 + bins.get(person["coords"], 0)
 
-    ret = []
-
-    mn = min(bins.values()) if bins else 0
-    mx = max(bins.values()) if bins else 0
-
-    for (lat, lon), val in bins.items():
-        ret.append({
-            "lat": lat,
-            "lon": lon,
-            "val": val,
-        })
-
-    resp = jsonify({
-        "data": ret,
-        "max": mx,
-        "min": mn
-    })
+    resp = jsonify([{"lat": lat, "lon": lon, "value": val} for (lat, lon), val in bins.items()])
     resp.headers['Access-Control-Allow-Origin'] = '*'
 
     return resp

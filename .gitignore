@@ -2,3 +2,6 @@ __pycache__
 *.swp
 lib
 database.db
+
+static/dist
+staic/node_modules
