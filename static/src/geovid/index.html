@@ -70,7 +70,7 @@
                     })),
                 });
 
-                timestamp.addEventListener('change', async () => drawLocations(await (await fetch(`/api/v1/simulated/locations/${timestamp.value - 30 * 60}/${timestamp.value}`)).json()));
+                timestamp.addEventListener('change', async () => drawLocations(await (await fetch(`/api/v1/simulated/locations/${timestamp.value - 5 * 60}/${timestamp.value}`)).json()));
                 timestamp.dispatchEvent(new Event('change'));
             });
         </script>
